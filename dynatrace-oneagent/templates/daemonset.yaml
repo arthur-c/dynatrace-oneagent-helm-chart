@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: {{ template "dynatrace-oneagent.fullname" . }}
+  labels:
+    app: {{ template "dynatrace-oneagent.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "dynatrace-oneagent.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      hostPID: {{ .Values.hostPID }}
+      hostIPC: {{ .Values.hostPID }}
+      hostNetwork: {{ .Values.hostPID }}
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          securityContext:
+            privileged: true
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: ONEAGENT_INSTALLER_SCRIPT_URL
+            value: {{ .Values.oneagent_installer_script_url }}
+          - name: ONEAGENT_INSTALLER_SKIP_CERT_CHECK
+            value: "{{ .Values.oneagent_installer_skip_cert_check }}"
+          volumeMounts:
+          - name: host-root
+            mountPath: /mnt/root
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
